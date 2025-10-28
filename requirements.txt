@@ -1,0 +1,11 @@
+Flask
+flask-session
+Flask-SQLAlchemy
+psycopg2-binary
+python-dotenv
+google-generativeai
+PyPDF2
+numpy
+scikit-learn
+werkzeug
+Flask-Migrate

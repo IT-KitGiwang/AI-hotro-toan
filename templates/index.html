@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Toán THCS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"
+        async></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            tex2jax: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col font-sans">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white text-center py-4 px-4 shadow-md">
+        <h1 class="text-xl md:text-2xl font-bold">💬 AI Hỗ Trợ Học Toán THCS</h1>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col md:flex-row">
+        <!-- Sidebar (Hidden on mobile, shown on md+) -->
+        <aside class="hidden md:block w-full md:w-64 bg-white shadow-md p-4 border-r border-blue-100">
+            <h2 class="text-lg font-semibold text-red-500 border-b pb-4 mb-4 flex items-center gap-2">
+                🎯 Các Tính Năng Khác
+            </h2>
+
+            <nav class="flex flex-col gap-3">
+                <!-- Nút: Tạo hình ảnh bằng AI -->
+                <a href="https://www.canva.com/vi_vn/tao-anh-ai/"
+                    class="flex items-center gap-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 font-medium py-2.5 px-4 rounded-lg transition shadow-sm">
+                    🎨 <span>Tạo hình ảnh bằng AI</span>
+                </a>
+
+                <!-- Nút: Tạo truyện bằng AI -->
+                <a href="https://www.canva.com/vi_vn/thiet-ke/viet-truyen-bang-ai/"
+                    class="flex items-center gap-2 bg-gradient-to-r from-green-100 to-green-50 hover:from-green-200 hover:to-green-100 text-green-700 font-medium py-2.5 px-4 rounded-lg transition shadow-sm">
+                    📚 <span>Tạo truyện bằng AI</span>
+                </a>
+
+                <!-- Nút: Trò chơi giải trí -->
+                <a href="{{ url_for('trochoi') }}"
+                    class="flex items-center gap-2 bg-gradient-to-r from-yellow-100 to-yellow-50 hover:from-yellow-200 hover:to-yellow-100 text-yellow-700 font-medium py-2.5 px-4 rounded-lg transition shadow-sm">
+                    🧩 <span>Trò chơi giải trí</span>
+                </a>
+
+                <!-- Nút: Đăng xuất -->
+                <a href="/logout"
+                    class="flex items-center gap-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 font-medium py-2.5 px-4 rounded-lg transition shadow-sm">
+                    🚪 <span>Đăng xuất</span>
+                </a>
+
+                <!-- Logo -->
+                <img src="https://sf-static.upanhlaylink.com/img/image_20251028961626dff513ce380a1aac69c0f1ca0c.jpg"
+                    alt="Logo" class="mt-5 mx-auto w-34 rounded-full shadow-md border border-blue-200">
+            </nav>
+        </aside>
+
+        <!-- Chat Area -->
+        <main class="flex-1 flex flex-col bg-gray-50">
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4">
+                <div
+                    class="ai-message bg-white border border-gray-200 rounded-lg p-4 max-w-[85%] self-start shadow-sm mathjax-container">
+                    👋 Xin chào! Thầy là trợ lý <span class="font-bold text-blue-600">Toán THCS</span>.
+                    Hãy nhập câu hỏi về <span class="bg-green-500 text-white px-2 py-1 rounded">Số học</span>,
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded">Đại số</span>,
+                    hoặc <span class="bg-yellow-500 text-white px-2 py-1 rounded">Hình học</span> để thầy giúp nhé!
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <form id="chat-form" class="p-4 bg-white border-t flex items-center gap-3">
+                <input type="text" id="message" name="message" placeholder="Nhập câu hỏi của con..."
+                    class="flex-1 border border-blue-200 rounded-full px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none text-gray-800 text-sm sm:text-base">
+                <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 py-2 sm:px-5 sm:py-2 font-semibold transition flex items-center gap-2 text-sm sm:text-base">
+                    🚀 Gửi
+                </button>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('message');
+        const chatMessages = document.getElementById('chat-messages');
+        let previousLevel = '{{ user_level }}';
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Hiển thị tin nhắn người dùng
+            const userDiv = document.createElement('div');
+            userDiv.className = `bg-blue-600 text-white rounded-lg p-3 self-end shadow-md max-w-[${message.length < 50 ? '50%' : message.length < 100 ? '65%' : '80%'}]`;
+            userDiv.textContent = message;
+            chatMessages.appendChild(userDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            input.value = '';
+
+            // Hiệu ứng typing
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'bg-white border border-gray-200 rounded-lg p-4 max-w-[85%] self-start shadow-sm flex items-center gap-2';
+            typingDiv.innerHTML = '<span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0s;"></span>' +
+                '<span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s;"></span>' +
+                '<span class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.4s;"></span>';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+
+                // Xóa hiệu ứng typing
+                chatMessages.removeChild(typingDiv);
+
+                // Hiển thị phản hồi AI
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'ai-message bg-white border border-gray-200 rounded-lg p-4 max-w-[85%] self-start shadow-sm mathjax-container';
+                aiDiv.innerHTML = data.response || '⚠️ Lỗi: Không có phản hồi.';
+                chatMessages.appendChild(aiDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Cập nhật mức năng lực
+                if (data.level && data.level !== previousLevel) {
+                    document.getElementById('user-level').textContent = data.level;
+                    previousLevel = data.level;
+                }
+
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub, "chat-messages"]);
+            } catch (err) {
+                chatMessages.removeChild(typingDiv);
+                const errDiv = document.createElement('div');
+                errDiv.className = 'bg-white border border-gray-200 rounded-lg p-4 max-w-[85%] self-start shadow-sm text-red-600';
+                errDiv.textContent = '⚠️ Lỗi kết nối, vui lòng thử lại.';
+                chatMessages.appendChild(errDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+
+        // Gửi khi nhấn Enter
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') form.dispatchEvent(new Event('submit'));
+        });
+    </script>
+</body>
+
+</html>
