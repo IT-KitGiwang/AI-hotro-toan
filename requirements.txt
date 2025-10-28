@@ -5,6 +5,7 @@ psycopg2-binary
 python-dotenv
 google-generativeai
 PyPDF2
+gunicorn
 numpy
 scikit-learn
 werkzeug
