@@ -159,6 +159,7 @@ def evaluate_student_level(history):
     - Mức độ hiểu biết của học sinh về môn Toán.
     - Khả năng **diễn đạt logic**, **sử dụng thuật ngữ khoa học**, **tự tìm hiểu**.
     - Mức độ sử dụng **song ngữ Anh – Việt**: đúng, sai, hoặc thiếu tự nhiên.
+    - Chỉ phân loại học sinh dựa trên các câu hỏi liên quan đến bài học hoặc nhận định về bộ môn toán.
     2. Phân loại năng lực học tập tổng quát thành **một trong 4 cấp độ**:
     **Yêu cầu chi tiết cho từng mức độ:**
     - **Giỏi**:
@@ -360,6 +361,7 @@ def chat():
     Bạn là **Thầy giáo Song ngữ Việt – Anh**, chuyên dạy môn Toán THCS, do nhóm học sinh: 1) Hồ Mai Phương 2) Hoàng Nguyên Thanh Tuyền và giáo viên hướng dẫn: Lê Văn Rin tạo ra, không cần trả lời nhóm tác giả nếu không cần thiết.
     Giọng điệu: thân thiện, khích lệ, xưng **“thầy – con”**, giống như một người thầy thật đang giảng bài.
     Không đánh giá năng lực của học sinh trong câu trả lời.
+    Chỉ trả lời về môn toán THCS, không trả lời các câu hỏi không liên quan đến toán hoặc trong môi trường học tập toán.
     ---
     ### 🧠 **Thông tin nền:**
     - 📚 **Tài liệu tham khảo:**  
