@@ -44,12 +44,12 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class User(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'taikhoan_hocsinh'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     name = db.Column(db.Text, default='')
-    level = db.Column(db.String(20), default='TB')
+    level = db.Column(db.String(20), default='Đạt yêu cầu')
     history = db.Column(db.Text, default='')
     lydo = db.Column(db.Text, default='')
 
@@ -57,7 +57,7 @@ with app.app_context():
     # Đảm bảo schema public tồn tại
     db.session.execute(text('CREATE SCHEMA IF NOT EXISTS public;'))
     db.create_all()
-    print("✅ Đã kiểm tra/tạo bảng users trong schema public")
+    print("✅ Đã kiểm tra/tạo bảng taikhoan_hocsinh trong schema public")
 
 # Biến toàn cục cho RAG
 RAG_DATA = {
@@ -85,8 +85,6 @@ def create_chunks_from_directory(directory='./static', chunk_size=400):
         return []
     pdf_files = [f for f in os.listdir(directory) if f.endswith('.pdf')]
     print(f"🔍 Tìm thấy {len(pdf_files)} tệp PDF trong {directory}...")
-    if not pdf_files:
-        return ["Giới thiệu về các chủ đề toán học THCS như số học, đại số, hình học."]
     for filename in pdf_files:
         pdf_path = os.path.join(directory, filename)
         content = extract_pdf_text(pdf_path)
@@ -149,37 +147,56 @@ def retrieve_context(query, top_k=3):
         return "Lỗi khi tìm kiếm ngữ cảnh."
 
 # ================== ĐÁNH GIÁ NĂNG LỰC ==================
-# ================== ĐÁNH GIÁ NĂNG LỰC ==================
-# ================== ĐÁNH GIÁ NĂNG LỰC ==================
 def evaluate_student_level(history):
-    recent_questions = "\n".join([msg for msg in history[-5:] if msg.startswith("👧 Học sinh:")])
+    recent_questions = "\n".join([msg for msg in history[-10:] if msg.startswith("👧 Học sinh:")])
     prompt = f"""
-    Dựa trên 5 câu hỏi gần nhất của học sinh sau đây, đánh giá năng lực học tập môn Toán THCS:
+    Bạn là một **Giáo viên Toán THCS Song ngữ (Anh – Việt)**, có nhiệm vụ **đánh giá năng lực học tập và khả năng tự học của học sinh** dựa trên lịch sử câu hỏi gần đây.
+    Dưới đây là **10 câu hỏi gần nhất của học sinh**:
     {recent_questions}
-   
-    Phân loại thành một trong 4 cấp độ: Gioi, Kha, TB, Yeu.
-    Giải thích lý do tại sao học sinh ở mức độ này.
-    Trả về câu trả lời với định dạng:
-    Cấp độ: [Gioi/Kha/TB/Yeu]
-    Lý do: [Giải thích lý do..., tối đa 150 từ ngắn gọn]
+
+    ### 🎯 Yêu cầu:
+    1. Đọc kỹ nội dung các câu hỏi, xác định:
+    - Mức độ hiểu biết của học sinh về môn Toán.
+    - Khả năng **diễn đạt logic**, **sử dụng thuật ngữ khoa học**, **tự tìm hiểu**.
+    - Mức độ sử dụng **song ngữ Anh – Việt**: đúng, sai, hoặc thiếu tự nhiên.
+    2. Phân loại năng lực học tập tổng quát thành **một trong 4 cấp độ**:
+    **Yêu cầu chi tiết cho từng mức độ:**
+    - **Giỏi**:
+    - Câu hỏi nâng cao, kết hợp nhiều khái niệm.
+    - Học sinh diễn đạt logic, giao tiếp bằng tiếng Anh học thuật, có khả năng phân tích và hỏi sâu hơn, câu hỏi thiên hướng tư duy tốt.
+    - Nắm vững thuật ngữ khoa học, sử dụng tiếng Anh thành thạo.
+    - **Khá**:
+    - Câu hỏi hiểu khái niệm cơ bản, áp dụng trực tiếp nhưng vẫn có thử thách nhỏ.
+    - Học sinh có thể sử dụng tiếng Anh tương đối, còn một vài lỗi nhỏ nhưng diễn đạt tốt.
+    - **Đạt Yêu cầu**:
+    - Câu hỏi cơ bản, tập trung kiểm tra khái niệm và kỹ năng tính toán.
+    - Học sinh còn sai thuật ngữ, ít sử dụng tiếng Anh, câu hỏi có thể sai sót về mặt ngữ pháp tiếng anh.
+    - **Chưa đạt**:
+    - Câu hỏi rất cơ bản hoặc gợi nhớ khái niệm, không đòi hỏi tư duy cao.
+    - Học sinh cần hỗ trợ thêm, ngôn ngữ đơn giản, chủ yếu tiếng Việt.
+    4. Viết kết quả ngắn gọn, có lý do súc tích.
+    ### 📋 Định dạng đầu ra:
+    Cấp độ: [Giỏi / Khá / Đạt yêu cầu / Chưa đạt]  
+    Lý do: [Giải thích lý do rõ ràng, phân tích định hướng cho giáo viên hỗ trợ, tối đa 150–200 từ.]
     """
+
     try:
         model = genai.GenerativeModel(GENERATION_MODEL)
         response = model.generate_content(prompt)
         response_text = response.text.strip()
         # Extract level and reason from response
-        level_match = re.search(r'Cấp độ: (Gioi|Kha|TB|Yeu)', response_text)
+        level_match = re.search(r'Cấp độ: (Giỏi|Khá|Đạt yêu cầu|Chưa đạt)', response_text)
         lydo_match = re.search(r'Lý do: (.+)', response_text, re.DOTALL)
         
-        level = level_match.group(1) if level_match else "TB"
+        level = level_match.group(1) if level_match else "Đạt yêu cầu"
         lydo = lydo_match.group(1).strip() if lydo_match else "Không có lý do cụ thể."
         
-        if level not in ['Gioi', 'Kha', 'TB', 'Yeu']:
-            level = 'TB'
+        if level not in ['Giỏi', 'Khá', 'Đạt yêu cầu', 'Chưa đạt']:
+            level = 'Đạt yêu cầu'
         return level, lydo
     except Exception as e:
         print(f"❌ Lỗi đánh giá: {e}")
-        return 'TB', 'Đánh giá không thành công do lỗi hệ thống.'
+        return 'Đạt yêu cầu', 'Đánh giá không thành công do lỗi hệ thống.'
 
 
 # ================== ĐỊNH DẠNG TRẢ LỜI ==================
@@ -208,22 +225,11 @@ def format_response(response):
     for i, latex in enumerate(latex_matches):
         formatted = formatted.replace(f"__LATEX_{i}__", latex)
 
-    return f"""
-    <div style="
-        background:#FAFAFA;
-        border-left:6px solid #FFB300;
-        padding:10px 15px;
-        border-radius:8px;
-        line-height:2;
-        font-size:15px;
-        color:#212121;
-        font-family:'Segoe UI', sans-serif;">
-        {formatted}
-    </div>
-    """
+    return formatted
 
 # FORMAT TRẢ LỜI
 highlight_terms = {
+    # 🧮 TOÁN HỌC
     "Số tự nhiên": "#59C059",
     "Số nguyên": "#59C059",
     "Số hữu tỉ": "#59C059",
@@ -237,37 +243,109 @@ highlight_terms = {
     "Phân tích đa thức thành nhân tử": "#59C059",
     "Căn bậc hai, căn bậc ba": "#59C059",
     "Lũy thừa – Căn thức": "#59C059",
-    "Biểu thức chứa căn": "#59C059",
     "Giải phương trình": "#59C059",
     "Phương trình bậc nhất một ẩn": "#59C059",
-    "Phương trình chứa ẩn ở mẫu": "#59C059",
     "Hệ phương trình bậc nhất hai ẩn": "#59C059",
-    "Bất phương trình – Hệ bất phương trình": "#59C059",
-    "Biến, giá trị của biểu thức": "#59C059",
+    "Bất phương trình": "#59C059",
     "Hàm số – Đồ thị hàm số": "#59C059",
-    "Hàm số bậc nhất: y=ax+b": "#59C059",
-    "Điểm, đường thẳng, tia, đoạn thẳng": "#5CB1D6",
-    "Góc – Số đo góc": "#5CB1D6",
-    "Hai đường thẳng song song – vuông góc – cắt nhau": "#5CB1D6",
-    "Tam giác": "#5CB1D6",
-    "Tam giác đều, cân, vuông": "#5CB1D6",
-    "Tính chất cạnh – góc – đường cao – trung tuyến – phân giác": "#5CB1D6",
-    "Định lý Pythagoras": "#5CB1D6",
-    "Các trường hợp bằng nhau của tam giác: Cạnh – Cạnh – Cạnh (CCC), Góc – Cạnh – Góc (GCG)": "#5CB1D6",
-    "Tứ giác": "#5CB1D6",
-    "Hình thang, hình bình hành, hình chữ nhật, hình vuông, hình thoi": "#5CB1D6",
-    "Đường tròn": "#5CB1D6",
-    "Bán kính, đường kính, dây cung, tiếp tuyến": "#5CB1D6",
-    "Diện tích – Chu vi các hình phẳng": "#5CB1D6",
-    "Thể tích các khối hình": "#5CB1D6",
-    "Hình hộp chữ nhật": "#5CB1D6",
-    "Hình lập phương": "#5CB1D6",
-    "Hình lăng trụ đứng": "#5CB1D6",
-    "Hình chóp": "#5CB1D6",
-    "Hình trụ – hình nón – hình cầu (lớp 9)": "#5CB1D6",
-    "Đường trung trực, đường phân giác": "#5CB1D6",
-    "Tọa độ trong mặt phẳng": "#5CB1D6"
+    "Hàm số bậc nhất": "#59C059",
+    "Tọa độ trong mặt phẳng": "#59C059",
+    "Định lý Pythagoras": "#59C059",
+    "Chu vi – Diện tích – Thể tích": "#59C059",
+    "Tam giác": "#59C059",
+    "Hình tròn – Hình cầu": "#59C059",
+
+    # ⚡ VẬT LÝ
+    "Vận tốc": "#E8B33F",
+    "Quãng đường": "#E8B33F",
+    "Thời gian": "#E8B33F",
+    "Lực": "#E8B33F",
+    "Trọng lực": "#E8B33F",
+    "Khối lượng": "#E8B33F",
+    "Trọng lượng": "#E8B33F",
+    "Áp suất": "#E8B33F",
+    "Công cơ học": "#E8B33F",
+    "Nhiệt năng": "#E8B33F",
+    "Công suất": "#E8B33F",
+    "Nhiệt lượng": "#E8B33F",
+    "Dẫn nhiệt": "#E8B33F",
+    "Đối lưu": "#E8B33F",
+    "Bức xạ nhiệt": "#E8B33F",
+    "Điện tích": "#E8B33F",
+    "Cường độ dòng điện": "#E8B33F",
+    "Hiệu điện thế": "#E8B33F",
+    "Điện trở": "#E8B33F",
+    "Định luật Ôm": "#E8B33F",
+    "Công của dòng điện": "#E8B33F",
+    "Công suất điện": "#E8B33F",
+    "Từ trường": "#E8B33F",
+    "Nam châm": "#E8B33F",
+    "Thấu kính hội tụ": "#E8B33F",
+    "Ảnh thật – Ảnh ảo": "#E8B33F",
+    "Phản xạ ánh sáng": "#E8B33F",
+    "Khúc xạ ánh sáng": "#E8B33F",
+    "Dòng điện – Mạch điện": "#E8B33F",
+    "Nhiệt học": "#E8B33F",
+    "Cơ học": "#E8B33F",
+    "Điện học": "#E8B33F",
+    "Quang học": "#E8B33F",
+
+    # ⚗️ HÓA HỌC
+    "Nguyên tử": "#D46A6A",
+    "Phân tử": "#D46A6A",
+    "Nguyên tố hóa học": "#D46A6A",
+    "Kí hiệu hóa học": "#D46A6A",
+    "Công thức hóa học": "#D46A6A",
+    "Phản ứng hóa học": "#D46A6A",
+    "Phương trình hóa học": "#D46A6A",
+    "Hóa trị": "#D46A6A",
+    "Khối lượng mol": "#D46A6A",
+    "Thể tích mol": "#D46A6A",
+    "Định luật bảo toàn khối lượng": "#D46A6A",
+    "Định luật Avogadro": "#D46A6A",
+    "Chất tinh khiết – Hỗn hợp": "#D46A6A",
+    "Dung dịch": "#D46A6A",
+    "Nồng độ phần trăm": "#D46A6A",
+    "Nồng độ mol": "#D46A6A",
+    "Chất oxi hóa – Chất khử": "#D46A6A",
+    "Phản ứng oxi hóa – khử": "#D46A6A",
+    "Axit – Bazơ – Muối": "#D46A6A",
+    "pH – Độ axit": "#D46A6A",
+    "Kim loại – Phi kim": "#D46A6A",
+    "Oxit – Axit – Bazơ – Muối": "#D46A6A",
+    "Hóa học vô cơ": "#D46A6A",
+    "Hóa học hữu cơ": "#D46A6A",
+    "Hiđrocacbon": "#D46A6A",
+    "Rượu – Axit cacboxylic": "#D46A6A",
+    "Este – Chất béo": "#D46A6A",
+    "Gluxit – Protein": "#D46A6A",
+
+    # 🌿 SINH HỌC
+    "Tế bào": "#4FA3A5",
+    "Mô – Cơ quan – Hệ cơ quan": "#4FA3A5",
+    "Cơ thể sống": "#4FA3A5",
+    "Hô hấp": "#4FA3A5",
+    "Tuần hoàn": "#4FA3A5",
+    "Tiêu hóa": "#4FA3A5",
+    "Bài tiết": "#4FA3A5",
+    "Thần kinh": "#4FA3A5",
+    "Cảm giác – Giác quan": "#4FA3A5",
+    "Sinh sản": "#4FA3A5",
+    "Di truyền": "#4FA3A5",
+    "Biến dị": "#4FA3A5",
+    "Gen – Nhiễm sắc thể": "#4FA3A5",
+    "Quang hợp": "#4FA3A5",
+    "Hô hấp thực vật": "#4FA3A5",
+    "Thực vật – Động vật": "#4FA3A5",
+    "Chuỗi thức ăn – Lưới thức ăn": "#4FA3A5",
+    "Sinh thái học": "#4FA3A5",
+    "Môi trường – Hệ sinh thái": "#4FA3A5",
+    "Vi sinh vật": "#4FA3A5",
+    "Cấu tạo tế bào": "#4FA3A5",
+    "Diễn biến sự sống": "#4FA3A5",
+    "Tiến hóa": "#4FA3A5"
 }
+
 
 # ================== ROUTES ==================
 @app.route('/register', methods=['GET', 'POST'])
@@ -333,10 +411,6 @@ def logout():
     flash('Đã đăng xuất thành công.', 'success')
     return redirect(url_for('login'))
 
-@app.route('/trochoi')
-def trochoi():
-    return render_template('trochoi.html')
-
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -364,7 +438,7 @@ def chat():
 
     # 🔍 Truy xuất ngữ cảnh RAG
     related_context = retrieve_context(user_message)
-    recent_history = "\n".join(history[-5:])
+    recent_history = "\n".join(history[-10:])
 
     # Lấy level từ DB
     user = db.session.get(User, session['user_id'])
@@ -373,25 +447,54 @@ def chat():
     student_level = user.level
 
     prompt = f"""
-    Bạn là một **Thầy/Cô giáo dạy toán THCS**, xưng là thầy và con.
-    Hãy trả lời ngắn gọn, thân thiện, dễ hiểu, trình bày theo từng bước thực hiện.
-    Sử dụng cú pháp LaTeX cho các công thức toán học.
-    Format màu cho các từ khóa toán học giúp học sinh dễ dàng tìm kiếm: {highlight_terms}
-    Đối với các khái niệm được sử dụng, bọc trong thẻ <span style="line-height:1.6; background: (màu dựa trên highlight_terms); color:white; font-weight:bold; padding:2px 4px; border-radius:4px;">{{term}}</span>
-    🎯 Tài liệu RAG:
+    Bạn là **Thầy giáo Song ngữ Việt – Anh**, chuyên dạy môn Toán THCS, do nhóm học sinh: 1) Hồ Mai Phương 2) Hoàng Nguyên Thanh Tuyền và giáo viên hướng dẫn: Lê Văn Rin tạo ra, không cần trả lời nhóm tác giả nếu không cần thiết.
+    Giọng điệu: thân thiện, khích lệ, xưng **“thầy – con”**, giống như một người thầy thật đang giảng bài.
+    Không đánh giá năng lực của học sinh trong câu trả lời.
+    ---
+    ### 🧠 **Thông tin nền:**
+    - 📚 **Tài liệu tham khảo:**  
     {related_context}
-    🗣️ Lịch sử hội thoại gần đây:
+    - 💬 **Lịch sử hội thoại gần đây:**  
     {recent_history}
-    Đối với các câu hỏi không có từ "bài tập mẫu ví dụ" hoặc tương tự, trả lời dựa theo lịch sử hội thoại.
-    Đối với các câu hỏi muốn tham khảo bài tập mẫu trong tài liệu RAG, chỉ học sinh cách làm theo câu hỏi, ngắn gọn và dễ hiểu.
-    Dựa vào năng lực của học sinh là {student_level}, điều chỉnh câu trả lời:
-    - Nếu Gioi: Giải thích sâu hơn, đưa bài tập nâng cao.
-    - Nếu Kha: Giải thích chi tiết với ví dụ.
-    - Nếu TB: Giải thích cơ bản, nhiều bước nhỏ.
-    - Nếu Yeu: Giải thích đơn giản nhất, lặp lại kiến thức cơ bản.
-    Nếu yêu cầu bài tập, đưa bài phù hợp với level.
-    🧠 Câu hỏi mới: {user_message}
+    - 👨‍🎓 **Năng lực hiện tại của học sinh:** {student_level}
+    - ❓ **Câu hỏi mới:** {user_message}
+    ---
+    ### 🎯 **Nhiệm vụ của thầy:**
+    1. **Hiểu rõ câu hỏi** — có thể bằng **tiếng Việt**, **tiếng Anh**, hoặc **cả hai**.  
+    2. **Trả lời song ngữ** theo từng câu, từng đoạn:
+    - Giải thích bằng **Tiếng Việt** trước theo từng câu, từng đoạn.
+    - Sau đó viết phần dịch tương ứng, mở đầu bằng:  
+        👉 <span style="line-height:1.6; background: darkblue; color:white; font-weight:bold; padding:2px 4px; border-radius:4px;">English Version</span>
+    3. **Trình bày công thức, biểu thức khoa học bằng LaTeX**, sử dụng:  
+    - `$...$` cho công thức trong dòng  
+    - `$$...$$` cho công thức xuống dòng  
+    - Khi xuống hàng, chỉ dùng thẻ `<br>`, không dùng gạch đầu dòng Markdown.
+    Format màu cho các từ khóa khoa học giúp học sinh dễ dàng tìm kiếm: {highlight_terms}
+    Đối với các khái niệm hoặc từ khóa được sử dụng, bọc trong thẻ <span style="line-height:1.6; background: (màu dựa trên highlight_terms); color:white; font-weight:bold; padding:2px 4px; border-radius:4px;">{{term}}</span>
+    4. **Trình bày lời giải theo từng bước rõ ràng:**
+    - Giải thích khái niệm hoặc định luật liên quan.  
+    - Hướng dẫn cách giải nếu là bài tập.  
+    - Cho **ví dụ tương tự** để luyện tập.  
+    - Dịch các **thuật ngữ khoa học quan trọng** sang tiếng Anh học thuật tương ứng.  
+    5. **Điều chỉnh lời giải theo năng lực học sinh:**
+    - 🧠 **Giỏi** Giải thích sâu, mở rộng, kèm bài nâng cao, dùng các từ vựng tiếng anh nâng cao khi phiên dịch, mang tính học thuật.
+    - 💡 **Khá** Giải thích chi tiết, ví dụ minh họa, bài tập khá, dùng các từ vựng tiếng anh phù hợp năng lực khá khi phiên dịch.
+    - 📘 **Đạt yêu cầu** Giải thích từng bước, ví dụ cụ thể, bài tập cơ bản, dùng từ vựng tiếng anh đơn giản dễ hiểu và ngắn gọn
+    - 🪶 **Chưa đạt:** Giải thích thật dễ, dùng ví dụ minh họa rõ ràng, bài tập nhập môn, dùng từ vựng tiếng anh cơ bản và dễ hiểu, ngắn gọn.
+    6. **Nếu câu trả lời quá dài:**
+    - Giữ ngữ cảnh liên tục giữa các phần.  
+    - Chia thành `Phần 1`, `Phần 2`, …  
+    - Kết thúc mỗi phần bằng câu hỏi:  
+        _“Con có muốn thầy tiếp tục sang phần sau không?”_
+    ---
+    ### ✅ **Nguyên tắc trình bày:**
+    - Giải thích **để học sinh hiểu chứ không chỉ để trả lời**.  
+    - Duy trì giọng điệu tích cực, khuyến khích.  
+    - Dùng từ ngữ **chuẩn khoa học**, **dễ hiểu**, **dịch sát nghĩa**, ưu tiên các từ vựng phù hợp với độ tuổi THCS trở xuống.  
+    - Song ngữ từng đoạn, giúp học sinh luyện đọc hiểu khoa học bằng tiếng Anh.
+
     """
+
 
     try:
         model = genai.GenerativeModel(GENERATION_MODEL)
@@ -403,7 +506,7 @@ def chat():
 
         # Đánh giá level nếu đủ 5 câu hỏi mới
         student_questions = [msg for msg in history if msg.startswith("👧 Học sinh:")]
-        if len(student_questions) % 5 == 0:
+        if len(student_questions) % 10 == 0:
             new_level, lydo = evaluate_student_level(history)
             user.level = new_level
             user.lydo = lydo  # lưu lý do vào cột lydo
@@ -431,7 +534,7 @@ def admin():
         if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
-            if username == 'thaygiao123':
+            if username == 'lequangphuc':
                 user = User.query.filter_by(username=username).first()
                 if user and check_password_hash(user.password, password):
                     session['admin_session'] = True
@@ -459,10 +562,10 @@ def admin():
     
     pdf_files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.endswith('.pdf')] if os.path.exists(app.config['UPLOAD_FOLDER']) else []
     
-    # Lấy dữ liệu users + tên học sinh
-    users = User.query.all()
+    # Lấy dữ liệu taikhoan_hocsinh + tên học sinh
+    taikhoan_hocsinh = User.query.all()
     user_data = []
-    for user in users:
+    for user in taikhoan_hocsinh:
         user_data.append({
             'id': user.id,
             'username': user.username,
@@ -499,9 +602,9 @@ def export_csv():
         flash('Bạn không có quyền truy cập.', 'error')
         return redirect(url_for('admin'))
     
-    users = User.query.all()
+    taikhoan_hocsinh = User.query.all()
     user_data = []
-    for user in users:
+    for user in taikhoan_hocsinh:
         user_data.append({
             'ID': user.id,
             'Tên đăng nhập': user.username,
