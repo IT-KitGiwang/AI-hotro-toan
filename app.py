@@ -179,6 +179,11 @@ def evaluate_student_level(history):
     ### 📋 Định dạng đầu ra:
     Cấp độ: [Giỏi / Khá / Đạt yêu cầu / Chưa đạt]  
     Lý do: [Giải thích lý do rõ ràng, phân tích định hướng cho giáo viên hỗ trợ, tối đa 150–200 từ.]
+    Ví dụ:
+    Cấp độ: Khá
+    Lý do: Học sinh thường hỏi các câu về khái niệm cơ bản nhưng có kết hợp thêm một số bài toán ứng dụng nhỏ. 
+    Học sinh sử dụng tiếng Anh tương đối tốt, chỉ có một vài lỗi ngữ pháp. 
+    Câu hỏi thể hiện tư duy logic, khả năng tự tìm hiểu, nhưng vẫn cần hướng dẫn thêm để nâng cao kỹ năng.
     """
 
     try:
@@ -187,7 +192,7 @@ def evaluate_student_level(history):
         response_text = response.text.strip()
         # Extract level and reason from response
         level_match = re.search(r'Cấp độ: (Giỏi|Khá|Đạt yêu cầu|Chưa đạt)', response_text)
-        lydo_match = re.search(r'Lý do: (.+)', response_text, re.DOTALL)
+        lydo_match = re.search(r'Lý do:\s*(.+)', response_text, re.DOTALL)
         
         level = level_match.group(1) if level_match else "Đạt yêu cầu"
         lydo = lydo_match.group(1).strip() if lydo_match else "Không có lý do cụ thể."
