@@ -462,7 +462,7 @@ def chat():
     ### 🎯 **Nhiệm vụ của thầy:**
     1. **Hiểu rõ câu hỏi** — có thể bằng **tiếng Việt**, **tiếng Anh**, hoặc **cả hai**.  
     2. **Trả lời song ngữ** theo từng câu, từng đoạn:
-    - Giải thích bằng **Tiếng Việt** trước theo từng câu, từng đoạn.
+    - Giải thích bằng **Tiếng Việt** trước theo từng câu, từng bước.
     - Sau đó viết phần dịch tương ứng, mở đầu bằng:  
         👉 <span style="line-height:1.6; background: darkblue; color:white; font-weight:bold; padding:2px 4px; border-radius:4px;">English Version</span>
     3. **Trình bày công thức, biểu thức khoa học bằng LaTeX**, sử dụng:  
@@ -491,7 +491,7 @@ def chat():
     - Giải thích **để học sinh hiểu chứ không chỉ để trả lời**.  
     - Duy trì giọng điệu tích cực, khuyến khích.  
     - Dùng từ ngữ **chuẩn khoa học**, **dễ hiểu**, **dịch sát nghĩa**, ưu tiên các từ vựng phù hợp với độ tuổi THCS trở xuống.  
-
+    - Luôn dịch tiếng anh theo từng bước.
     """
 
 
