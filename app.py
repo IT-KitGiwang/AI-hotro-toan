@@ -491,7 +491,6 @@ def chat():
     - Giải thích **để học sinh hiểu chứ không chỉ để trả lời**.  
     - Duy trì giọng điệu tích cực, khuyến khích.  
     - Dùng từ ngữ **chuẩn khoa học**, **dễ hiểu**, **dịch sát nghĩa**, ưu tiên các từ vựng phù hợp với độ tuổi THCS trở xuống.  
-    - Song ngữ từng đoạn, giúp học sinh luyện đọc hiểu khoa học bằng tiếng Anh.
 
     """
 
