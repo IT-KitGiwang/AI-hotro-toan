@@ -409,6 +409,7 @@ def chat():
     - Duy trì giọng điệu tích cực, khuyến khích.  
     - Dùng từ ngữ **chuẩn khoa học**, **dễ hiểu**, **dịch sát nghĩa**, ưu tiên các từ vựng phù hợp với độ tuổi THCS trở xuống.  
     - Luôn dịch tiếng anh theo từng bước.
+    - Luôn ưu tiên sự ngắn gọn, dễ hiểu, tránh lan man dài dòng.
     """
 
 
